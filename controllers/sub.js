@@ -1,5 +1,6 @@
+const slug = require("limax");
 const Sub = require("../models/sub");
-const slugify = require("slugify");
+// const slugify = require("slugify");
 
 exports.create = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.create = async (req, res) => {
     const { name, parent } = req.body;
     const sub = await new Sub({
       name: name,
-      slug: slugify(name),
+      slug: slug(name),
       parent: parent,
     }).save(); //save()でデータベースに保存。
     res.json(sub); //関係ないけど、resに含めとく。
@@ -32,7 +33,7 @@ exports.update = async (req, res) => {
   try {
     const updated = await Sub.findOneAndUpdate(
       { slug: req.params.slug },
-      { name: name, slug: slugify(name), parent: parent }
+      { name: name, slug: slug(name), parent: parent }
     ); //nameはすでにreq.bodyから取得したもの。検索は、url内の既存のslugで。つまり、api/sub/apple に、req.body={"name": "newname"}て感じ
     res.json(updated);
   } catch (err) {

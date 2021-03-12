@@ -1,6 +1,7 @@
+const slug = require("limax");
 const Category = require("../models/category");
 const Sub = require("../models/sub");
-const slugify = require("slugify");
+// const slugify = require("slugify");
 
 exports.create = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ exports.create = async (req, res) => {
     const { name } = req.body;
     const category = await new Category({
       name: name,
-      slug: slugify(name),
+      slug: slug(name),
     }).save(); //save()でデータベースに保存。
     res.json(category); //関係ないけど、resに含めとく。
   } catch (err) {
@@ -35,7 +36,7 @@ exports.update = async (req, res) => {
     const updated = await Category.findOneAndUpdate(
       //findByIdAndRemoveもあるよ
       { slug: req.params.slug },
-      { name: name, slug: slugify(name) }
+      { name: name, slug: slug(name) }
     ); //nameはすでにreq.bodyから取得したもの。検索は、url内の既存のslugで。つまり、api/category/apple に、req.body={"name": "newname"}て感じ
     res.json(updated);
   } catch (err) {

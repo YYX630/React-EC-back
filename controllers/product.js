@@ -1,11 +1,12 @@
+const slug = require("limax");
 const Product = require("../models/product");
 const User = require("../models/user");
-const slugify = require("slugify");
+// const slugify = require("slugify");
 
 exports.create = async (req, res) => {
   try {
     console.log("REQ BODY", req.body);
-    req.body.slug = slugify(req.body.title); //req.bodyにslugを追加
+    req.body.slug = slug(req.body.title); //req.bodyにslugを追加
     const newProduct = await new Product(req.body).save(); //情報はすべてreq.bodyにオブジェクトとしてある。それをsave()でDBに保存するだけ。
     res.json(newProduct);
   } catch (err) {
@@ -50,7 +51,7 @@ exports.update = async (req, res) => {
   try {
     //注意、updateするとslugも自動で変えたい
     if (req.body.title) {
-      req.body.slug = slugify(req.body.title); //名前変えた場合、slugも変えてあげる
+      req.body.slug = slug(req.body.title); //名前変えた場合、slugも変えてあげる
     }
     const updated = await Product.findOneAndUpdate(
       { slug: req.params.slug },
