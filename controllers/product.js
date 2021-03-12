@@ -1,4 +1,5 @@
 const Product = require("../models/product");
+const User = require("../models/user");
 const slugify = require("slugify");
 
 exports.create = async (req, res) => {
@@ -114,4 +115,51 @@ exports.list = async (req, res) => {
 exports.productsCount = async (req, res) => {
   let total = await Product.find({}).estimatedDocumentCount().exec();
   res.json(total);
+};
+
+exports.productStar = async (req, res) => {
+  //製品を捜索
+  const product = await Product.findById(req.params.productId).exec();
+  // userを検索
+  const user = await User.findOne({ email: req.user.email }).exec();
+
+  //評価をする。
+  const { star } = req.body;
+  // check if currently logged in user have already added rating to this product
+
+  //引っ張ってきた製品の中から検索！Productじゃなくてproductね。
+  console.log("product", product);
+
+  let existingRatingObject = product.ratings.find((element) => {
+    return element.postedBy.toString() === user._id.toString(); //toSting()使わずに、==で比較でもいいけど。  //return忘れてた製でバグってたーーーー
+  });
+
+  // if user haven't left rating yet, push it as a new one
+  // if user already has one, update it.
+  if (existingRatingObject === undefined) {
+    let ratingAdded = await Product.findByIdAndUpdate(
+      product._id,
+      {
+        $push: { ratings: { star: star, postedBy: user._id } },
+      },
+      { new: true } //be able to send the newly updated object also to the frontend.
+    )
+      .exec()
+      .then((result) => {})
+      .catch((err) => console.log(err));
+    console.log("ratingAdded", ratingAdded);
+    res.json(ratingAdded);
+  } else {
+    const ratingUpdated = await Product.updateOne(
+      {
+        ratings: { $elemMatch: existingRatingObject }, //他の製品で、ratingsだけが同じなものはmatchしないような仕様なのかな。existingRatingObjectの中身によるか。
+      },
+      { $set: { "ratings.$.star": star } },
+      { new: true }
+    )
+      .exec()
+      .then((result) => {})
+      .catch((err) => console.log(err));
+    res.json(ratingUpdated);
+  }
 };
