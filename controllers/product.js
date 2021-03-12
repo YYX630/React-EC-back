@@ -18,8 +18,9 @@ exports.create = async (req, res) => {
 };
 
 exports.listAll = async (req, res) => {
+  const limit = req.params.count;
   const products = await Product.find({}) //すべて取得
-    .limit(parseInt(req.params.count)) //何個取得するかreqで指定する
+    .limit(parseInt(limit)) //何個取得するかreqで指定する
     .populate("category") //categoryの取得
     .populate("subs") //subcategoryの取得
     .sort([["createdAt", "desc"]]) //createAtフィールドの値で、降順に並べるということ
@@ -64,4 +65,53 @@ exports.update = async (req, res) => {
       err: err.message,
     });
   }
+};
+
+//WITHOUT PAGINATION
+// exports.list = async (req, res) => {
+//   try {
+//     //new arrivals や best sellers両方に対応できるよう、オプション多めに渡される。
+//     // createdAt/updated at, desc/asc, 3
+//     const { sort, order, limit } = req.body;
+//     const products = await Product.find({})
+//       .sort({})
+//       .populate("category")
+//       .populate("subs")
+//       .sort([[sort, order]])
+//       .limit(limit)
+//       .exec();
+
+//     res.json(products);
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
+
+//WITH PAGINATION
+exports.list = async (req, res) => {
+  try {
+    //new arrivals や best sellers両方に対応できるよう、オプション多めに渡される。
+    // createdAt/updated at, desc/asc, 3
+    const { sort, order, limit, page } = req.body;
+    const currentPage = page || 1;
+    const perPage = limit;
+
+    const products = await Product.find({})
+      .skip((currentPage - 1) * perPage)
+      .sort({})
+      .populate("category")
+      .populate("subs")
+      .sort([[sort, order]])
+      .limit(perPage)
+      .exec();
+
+    res.json(products);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+exports.productsCount = async (req, res) => {
+  let total = await Product.find({}).estimatedDocumentCount().exec();
+  res.json(total);
 };
