@@ -1,6 +1,12 @@
-const slug = require("limax");
 const Sub = require("../models/sub");
+const Product = require("../models/product");
+
 // const slugify = require("slugify");
+// const slug = require("limax");
+const Kuroshiro = require("kuroshiro");
+const kuroshiro = new Kuroshiro();
+const KuromojiAnalyzer = require("kuroshiro-analyzer-kuromoji");
+kuroshiro.init(new KuromojiAnalyzer());
 
 exports.create = async (req, res) => {
   try {
@@ -8,7 +14,10 @@ exports.create = async (req, res) => {
     const { name, parent } = req.body;
     const sub = await new Sub({
       name: name,
-      slug: slug(name),
+      slug: await kuroshiro.convert(name, {
+        to: "romaji",
+        romajiSystem: "passport",
+      }),
       parent: parent,
     }).save(); //save()でデータベースに保存。
     res.json(sub); //関係ないけど、resに含めとく。
@@ -24,8 +33,18 @@ exports.list = async (req, res) => {
 };
 
 exports.read = async (req, res) => {
-  let sub = await (await Sub.findOne({ slug: req.params.slug })).execPopulate(); //req.params.slugはrouteでapi/sub/:slugを書いてるから使える
+  let sub = await Sub.findOne({ slug: req.params.slug }).exec(); //req.params.slugはrouteでapi/sub/:slugを書いてるから使える
   res.json(sub);
+};
+
+exports.readWithProducts = async (req, res) => {
+  let sub = await Sub.findOne({ slug: req.params.slug }).exec(); //req.params.slugはrouteでapi/category/:slugを書いてるから使える
+  // res.json(category);
+  let products = await Product.find({ subs: sub._id })
+    .populate("category")
+    .exec();
+  // console.log("PRODUCTS", products);
+  res.json({ sub, products }); //jsonに渡すのは一つの（！）オブジェクト
 };
 
 exports.update = async (req, res) => {
@@ -33,7 +52,14 @@ exports.update = async (req, res) => {
   try {
     const updated = await Sub.findOneAndUpdate(
       { slug: req.params.slug },
-      { name: name, slug: slug(name), parent: parent }
+      {
+        name: name,
+        slug: await kuroshiro.convert(name, {
+          to: "romaji",
+          romajiSystem: "passport",
+        }),
+        parent: parent,
+      }
     ); //nameはすでにreq.bodyから取得したもの。検索は、url内の既存のslugで。つまり、api/sub/apple に、req.body={"name": "newname"}て感じ
     res.json(updated);
   } catch (err) {

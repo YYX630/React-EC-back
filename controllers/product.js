@@ -1,12 +1,19 @@
-const slug = require("limax");
 const Product = require("../models/product");
 const User = require("../models/user");
 // const slugify = require("slugify");
+// const slug = require("limax");
 
+const Kuroshiro = require("kuroshiro");
+const kuroshiro = new Kuroshiro();
+const KuromojiAnalyzer = require("kuroshiro-analyzer-kuromoji");
+kuroshiro.init(new KuromojiAnalyzer());
 exports.create = async (req, res) => {
   try {
-    console.log("REQ BODY", req.body);
-    req.body.slug = slug(req.body.title); //req.bodyにslugを追加
+    // console.log("REQ BODY", req.body);
+    req.body.slug = await kuroshiro.convert(req.body.title, {
+      to: "romaji",
+      romajiSystem: "passport",
+    }); //req.bodyにslugを追加
     const newProduct = await new Product(req.body).save(); //情報はすべてreq.bodyにオブジェクトとしてある。それをsave()でDBに保存するだけ。
     res.json(newProduct);
   } catch (err) {
@@ -51,7 +58,10 @@ exports.update = async (req, res) => {
   try {
     //注意、updateするとslugも自動で変えたい
     if (req.body.title) {
-      req.body.slug = slug(req.body.title); //名前変えた場合、slugも変えてあげる
+      req.body.slug = await kuroshiro.convert(req.body.title, {
+        to: "romaji",
+        romajiSystem: "passport",
+      }); //名前変えた場合、slugも変えてあげる
     }
     const updated = await Product.findOneAndUpdate(
       { slug: req.params.slug },
@@ -163,4 +173,19 @@ exports.productStar = async (req, res) => {
       .catch((err) => console.log(err));
     res.json(ratingUpdated);
   }
+};
+
+exports.listRelated = async (req, res) => {
+  const product = await Product.findById(req.params.productId).exec();
+  const related = await Product.find({
+    _id: { $ne: product._id }, //本体を除外した上で、
+    category: product.category, //本体と同じカテゴリーのものを表示
+  })
+    .limit(3)
+    .populate("category")
+    .populate("subs")
+    .populate("postedBy")
+    .exec();
+
+  res.json(related);
 };

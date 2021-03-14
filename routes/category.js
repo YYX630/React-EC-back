@@ -9,6 +9,7 @@ const { authCheck, adminCheck } = require("../middlewares/auth");
 const {
   create,
   read,
+  readWithProducts,
   update,
   remove,
   list,
@@ -22,6 +23,7 @@ const {
 router.post("/category", authCheck, adminCheck, create);
 router.get("/categories", list); //これは公開
 router.get("/category/:slug", read); //readにはslug情報をfrontから送る必要がある。urlに含めることで、req.params.slugの形で入る。
+router.get("/category-with-products/:slug", readWithProducts);
 router.put("/category/:slug", authCheck, adminCheck, update);
 router.delete("/category/:slug", authCheck, adminCheck, remove);
 
