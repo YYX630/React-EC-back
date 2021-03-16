@@ -16,6 +16,7 @@ const {
   productsCount,
   productStar,
   listRelated,
+  searchFilters,
 } = require("../controllers/product");
 
 // 指定urlに対し、実行したい関数を順番に突っ込む。一応、middleware, controllerとの区別はできるが、ぶっちゃけただの関数。
@@ -34,8 +35,12 @@ router.get("/countproducts", productsCount); //総数を調べる。注意、url
 // rating
 router.put("/product/star/:productId", authCheck, productStar);
 
-//related
+//related products
 router.get("/product/related/:productId", listRelated);
+
+//search products
+//いろいろなパラメーターを一緒に送りたいから、getではなくpostで一つでできるようにする
+router.post("/search/filters", searchFilters);
 
 //export
 module.exports = router;
